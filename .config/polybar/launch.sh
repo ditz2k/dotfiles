@@ -1,0 +1,1 @@
+/home/yan/dotfiles/.config/polybar/launch.sh
