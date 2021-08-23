@@ -118,5 +118,6 @@ alias tofish="sudo chsh $USER -s /bin/fish && echo 'Now log out.'"
 # bare git repo alias for dotfiles
 alias config="/usr/bin/git --git-dir=$HOME/dotfiles --work-tree=$HOME"
 
+neofetch 
 ### SETTING THE STARSHIP PROMPT ###
 eval "$(starship init bash)"
