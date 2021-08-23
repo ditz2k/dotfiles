@@ -1,73 +1,99 @@
-#!/bin/bash
+#!/bin/sh
+# Example Bar Action Script for Linux.
+# Requires: acpi, iostat.
+# Tested on: Debian 10, Fedora 31.
+#
 
-# baraction.sh for spectrwm status bar
-# https://github.com/conformal/spectrwm
-
-# Antonio Sarosi
-# https://youtube.com/c/antoniosarosi
-# https://github.com/antoniosarosi/dotfiles
-
-icon() {
-    echo -n "+@fg=1;$1+@fg=0;"
+print_date() {
+	# The date is printed to the status bar by default.
+	# To print the date through this script, set clock_enabled to 0
+	# in spectrwm.conf.  Uncomment "print_date" below.
+	FORMAT="%a %b %d %R %Z %Y"
+	DATE=`date "+${FORMAT}"`
+	echo -n "${DATE}     "
 }
 
-percentage() {
-    current=`echo $1 | sed 's/%//'`
-    if [ $current -le 25 ]; then 
-        echo -n "$(icon $2)"
-    elif [ $current -le 50 ]; then
-        echo -n "$(icon $3)"
-    elif [ $current -le 75 ]; then
-        echo -n "$(icon $4)"
-    else
-        echo -n "$(icon $5)"
-    fi
+print_mem() {
+	MEM=`/usr/bin/free -m | grep ^Mem: | sed -E 's/ +/ /g' | cut -d ' ' -f4`
+	echo -n "Free mem: ${MEM}M  "
 }
 
-sleep_sec=2
-i=0
+_print_cpu() {
+	printf "CPU: %3d%% User %3d%% Nice %3d%% Sys %3d%% Idle  " $1 $2 $3 $6
+}
+
+print_cpu() {
+	OUT=""
+	# Remove the decimal part from all the percentages.
+	while [ "${1}x" != "x" ]; do
+		OUT="$OUT `echo "${1}" | cut -d '.' -f1`"
+		shift;
+	done
+	_print_cpu $OUT
+}
+
+print_cpuspeed() {
+	CPU_SPEED=`/usr/bin/lscpu | grep '^CPU MHz:' | sed -E 's/ +/ /g' | cut -d ' ' -f3 | cut -d '.' -f1`
+	printf "CPU speed: %4d MHz  " $CPU_SPEED
+}
+
+print_bat() {
+	AC_STATUS="$3"
+	BAT_STATUS="$6"
+	# Most battery statuses fit into a single word, except "Not charging"
+	# for which we need to have special handling.
+	if [ "$BAT_STATUS" = "Not" ]; then
+		BAT_STATUS="$BAT_STATUS $7"
+		shift
+	fi
+	BAT_LEVEL="`echo "$7" | tr -d ','`"
+
+	if [ "$AC_STATUS" != "" -o "$BAT_STATUS" != "" ]; then
+		if [ "$BAT_STATUS" = "Discharging," ]; then
+			echo -n "on battery ($BAT_LEVEL)"
+		else
+			case "$AC_STATUS" in
+			on-line)
+				AC_STRING="on AC: "
+				;;
+			*)
+				AC_STRING=""
+				;;
+			esac
+			case "$BAT_STATUS" in
+			"")
+				BAT_STRING="(no battery)"
+				;;
+			*harging,|Full,)
+				BAT_STRING="(battery $BAT_LEVEL)"
+				;;
+			*)
+				BAT_STRING="(battery unknown)"
+				;;
+			esac
+
+			FULL="${AC_STRING}${BAT_STRING}"
+			if [ "$FULL" != "" ]; then
+				echo -n "$FULL"
+			fi
+		fi
+	fi
+}
+
+# Cache the output of acpi(8), no need to call that every second.
+ACPI_DATA=""
+I=0
 while :; do
-    # Updates
-    if (( $i % 60 == 0 )); then
-        updates=`checkupdates | wc -l`
-    fi
-    echo -n "$(icon  ) $updates "
-
-    # Brightness
-    (( br = $(brightnessctl get) * 100 / 255 ))
-    echo -n "$(percentage $br        ) $br% "
-
-    # Volume
-    vol=`pamixer --get-volume`
-    if [[ `pamixer --get-mute` == "true" ]]; then
-        echo -n "$(icon ﱝ ) $vol% "
-    else
-        echo -n "$(percentage $vol   奔 墳   ) $vol% "
-    fi
-
-    # Battery
-    if (( $i % 60 == 0 )); then
-        bat=`upower -i /org/freedesktop/UPower/devices/battery_BAT1 |
-            grep percentage |
-            sed 's/ *percentage: *//g'`
-
-        state=`upower -i /org/freedesktop/UPower/devices/battery_BAT1 |
-            grep state |
-            sed 's/ *state: *//'`
-    fi
-    if [ $state == "charging" -o $state == "fully-charged" ]; then
-        echo -n "$(icon  ) "
-    else
-        echo -n "$(percentage $bat            )  "
-    fi
-    echo -n "$bat "
-
-    # Date
-    if (( $i % 60 == 0 )); then
-        dte="$(date +"$(icon  ) %d/%m/%Y $(icon  ) %H:%M")"
-    fi
-    echo -e "$dte"
-
-	sleep $sleep_sec
-    (( i += $sleep_sec ))
+	IOSTAT_DATA=`/usr/bin/iostat -c | grep '[0-9]$'`
+	if [ $I -eq 0 ]; then
+		ACPI_DATA=`/usr/bin/acpi -a 2>/dev/null; /usr/bin/acpi -b 2>/dev/null`
+	fi
+	# print_date
+	print_mem
+	print_cpu $IOSTAT_DATA
+	print_cpuspeed
+	print_bat $ACPI_DATA
+	echo ""
+	I=$(( ( ${I} + 1 ) % 11 ))
+	sleep 1
 done
