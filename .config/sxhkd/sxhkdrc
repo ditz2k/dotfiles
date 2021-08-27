@@ -1,0 +1,46 @@
+# run kitty
+mod4 + shift + Return
+  kitty -e fish
+
+# reload config
+mod4 + Escape
+  pkill -USR1 -x shxkd
+
+# run rofi
+mod4 + p
+  rofi -show run
+
+# quit/restart bspwm
+mod4 + shift + q
+  bspc quit
+
+# restart bspwm
+mod4 + q
+  bspc wm -r
+
+# close
+mod4 + x
+  bspc node -c
+
+# kill
+mod4 + shift + x
+  bspc node -k
+
+# screenshot
+mod4 + P
+  scrot -f
+
+# vol up
+XF86AudioRaiseVolume
+  pactl set-sink-volume @DEFAULT_SINK@ +5%
+
+# vol down
+XF86AudioLowerVolume
+  pactl set-sink-volume @DEFAULT_SINK@ -5%
+
+# audio mute
+XF86AudioMute
+  pactl set-sink-mute @DEFAULT_SINK@ toggle
+
+
+
