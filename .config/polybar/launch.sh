@@ -9,4 +9,9 @@ while pgrep -u $UID -x polybar >/dev/null; do sleep 1; done
 # Launch Polybar, using default config location ~/.config/polybar/config
 polybar ditz2k &
 
+if [[ $(xrandr -q | grep 'HDMI1 connected') ]]; then
+	polybar external &
+fi
+
+# polybar colortest
 echo "Polybar launched..."

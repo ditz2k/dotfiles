@@ -3,8 +3,8 @@ mod4 + shift + Return
   kitty -e fish
 
 # reload config
-mod4 + Escape
-  pkill -USR1 -x shxkd
+mod4 + R
+  pkill -USR1 -x sxhkd
 
 # run rofi
 mod4 + p
@@ -27,7 +27,7 @@ mod4 + shift + x
   bspc node -k
 
 # screenshot
-mod4 + P
+mod4 + ctrl + p
   scrot -f
 
 # vol up
@@ -42,5 +42,38 @@ XF86AudioLowerVolume
 XF86AudioMute
   pactl set-sink-mute @DEFAULT_SINK@ toggle
 
+# focus the node in the given direction
+mod4 + {h,j,k,l}
+  bspc node -f {west,south,north,east}
 
+# swap with the node in the given direction
+mod4 + shift + {h,j,k,l}
+  bspc node -s {west,south,north,east}
 
+# make current window focus
+mod4 + g
+  bspc node -s biggest.window
+
+# focus or send to the given desktop
+mod4 + {_,shift + }{1-9,10}
+  bspc {desktop -f,node -d} '^{1-9,10}'
+
+# brightness control
+{XF86MonBrightnessUp,XF86MonBrightnessDown}
+  brightnessctl s {+10%,10%-}
+
+# make float
+mod4 + f
+  bspc node -t floating
+
+# make tiled
+mod4 + t
+  bspc node -t tiled
+
+# grow/shrink right/left
+mod4 + ctrl + {l,L,h,H}
+  bspc node -z {right 20 0,left 20 0,right -20 0,left -20 0}
+
+# grow/shrink up/down
+mod4 + ctrl + {j,J,k,K}
+  bspc node -z {top 0 -20,bottom 0 20,top 0 20,bottom 0 -20}
